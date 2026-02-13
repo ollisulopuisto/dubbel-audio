@@ -124,7 +124,16 @@
                 </div>
             </div>
 
-            <div class="flex gap-4">
+            <div id="unlockOverlay" class="flex flex-col items-center gap-4">
+                <button id="unlockBtn" class="px-10 py-4 bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-black rounded-full transition-all shadow-xl shadow-yellow-500/20 animate-bounce text-center leading-tight">
+                    KLIKKAA TÄSTÄ AKTIVOIDAKSESI ÄÄNET (iOS)
+                </button>
+                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-tighter text-center max-w-[250px]">
+                    iPhone vaatii manuaalisen klikkauksen äänen aktivoimiseksi. Tarkista myös, ettei puhelin ole fyysisellä kytkimellä äänettömällä.
+                </p>
+            </div>
+
+            <div id="controls" class="hidden flex gap-4">
                 <button id="playBtn" disabled class="px-8 py-3 bg-green-500 hover:bg-green-600 disabled:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-full transition-all flex items-center gap-2">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
                     SOITA
@@ -134,7 +143,7 @@
                     PYSÄYTÄ
                 </button>
             </div>
-            <p id="status" class="text-sm text-slate-500 italic">Lataa tiedostot aloittaaksesi</p>
+            <p id="status" class="text-sm text-slate-500 italic text-center">Ladataan oletustiedostoja...</p>
         </div>
     </div>
 
@@ -160,12 +169,13 @@
         const playBtn = document.getElementById('playBtn');
         const stopBtn = document.getElementById('stopBtn');
         const status = document.getElementById('status');
+        const unlockBtn = document.getElementById('unlockBtn');
+        const unlockOverlay = document.getElementById('unlockOverlay');
+        const controls = document.getElementById('controls');
 
         function updateGains() {
             if (!gainL || !gainR) return;
             const val = parseFloat(mixer.value);
-            // -1: vain vasen, 0: molemmat täysillä, 1: vain oikea
-            // Käytetään yksinkertaista lineaarista häivytystä
             const volL = val > 0 ? 1 - val : 1;
             const volR = val < 0 ? 1 + val : 1;
             
@@ -179,16 +189,16 @@
 
         mixer.addEventListener('input', updateGains);
 
-        // Nollaa mikseri keskelle tuplaklikkauksella
         mixer.addEventListener('dblclick', () => {
             mixer.value = 0;
             updateGains();
         });
 
-        // Alustetaan AudioContext käyttäjän eleestä (vältetään lukitus mobiilissa)
         function initAudio() {
             if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)({
+                    latencyHint: 'playback'
+                });
             }
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
@@ -196,21 +206,37 @@
             return audioCtx;
         }
 
-        async function loadAudio(file) {
+        unlockBtn.addEventListener('click', () => {
             const ctx = initAudio();
+            
+            // Soitetaan hetki hiljaisuutta herättämiseksi
+            const osc = ctx.createOscillator();
+            const silent = ctx.createGain();
+            silent.gain.value = 0;
+            osc.connect(silent);
+            silent.connect(ctx.destination);
+            osc.start(0);
+            osc.stop(0.1);
+
+            unlockOverlay.classList.add('hidden');
+            controls.classList.remove('hidden');
+            if (bufferL && bufferR) {
+                status.textContent = 'Valmis toistoon';
+            }
+        });
+
+        async function loadAudio(file) {
             const arrayBuffer = await file.arrayBuffer();
-            console.log('Tiedosto luettu ArrayBufferiksi, pituus:', arrayBuffer.byteLength);
+            const ctx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
             try {
                 return await ctx.decodeAudioData(arrayBuffer);
             } catch (e) {
-                console.error('AudioContext.decodeAudioData virhe:', e);
-                throw new Error('Tiedostomuotoa ei tueta tai tiedosto on vioittunut.');
+                console.error('decodeAudioData virhe:', e);
+                throw new Error('Tiedostomuotoa ei tueta.');
             }
         }
 
-        // Lataa oletustiedostot
         async function loadDefaults() {
-            status.textContent = 'Ladataan oletustiedostoja...';
             try {
                 const [resL, resR] = await Promise.all([
                     fetch('001.mp3'),
@@ -224,9 +250,6 @@
                     resR.blob()
                 ]);
 
-                // iPhonella decodeAudioData saattaa vaatia AudioContextin olevan jo olemassa
-                // mutta emme voi kutsua initAudio() tässä ilman eleitä.
-                // Käytetään väliaikaista tapaa säilöä blobit, jos decode epäonnistuu.
                 const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const [bL, bR] = await Promise.all([
                     tempCtx.decodeAudioData(await blobL.arrayBuffer()),
@@ -239,7 +262,7 @@
                 checkReady();
             } catch (err) {
                 console.error('Virhe oletustiedostojen latauksessa:', err);
-                status.textContent = 'Oletustiedostojen lataus epäonnistui. Lataa omat tiedostosi.';
+                status.textContent = 'Oletustiedostojen lataus epäonnistui.';
             }
         }
 
@@ -254,7 +277,6 @@
                     checkReady();
                 } catch (err) {
                     status.textContent = 'VIRHE (Vasen): ' + err.message;
-                    console.error(err);
                 }
             }
         });
@@ -268,7 +290,6 @@
                     checkReady();
                 } catch (err) {
                     status.textContent = 'VIRHE (Oikea): ' + err.message;
-                    console.error(err);
                 }
             }
         });
@@ -276,9 +297,11 @@
         function checkReady() {
             if (bufferL && bufferR) {
                 playBtn.disabled = false;
-                status.textContent = 'Valmis toistoon';
-            } else if (bufferL || bufferR) {
-                status.textContent = 'Lataa vielä toinen tiedosto';
+                if (unlockOverlay.classList.contains('hidden')) {
+                    status.textContent = 'Valmis toistoon';
+                } else {
+                    status.textContent = 'Oletukset ladattu, aktivoi äänet yltä';
+                }
             }
         }
 
@@ -293,7 +316,8 @@
         });
 
         function createReversedBuffer(originalBuffer) {
-            const reversedBuffer = audioCtx.createBuffer(
+            const ctx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+            const reversedBuffer = ctx.createBuffer(
                 originalBuffer.numberOfChannels,
                 originalBuffer.length,
                 originalBuffer.sampleRate
@@ -323,7 +347,6 @@
 
             const merger = ctx.createChannelMerger(2);
             
-            // Reititys: merger -> (mahdollinen limitteri) -> destination
             if (useLimiter.checked) {
                 const limiter = ctx.createDynamicsCompressor();
                 limiter.threshold.setValueAtTime(-12, ctx.currentTime);
@@ -372,7 +395,7 @@
 
             let endedCount = 0;
             const onEnded = () => {
-                if (loopAudio.checked) return; // Älä pysäytä jos looppaus on päällä
+                if (loopAudio.checked) return;
                 endedCount++;
                 if (endedCount >= 2) stop();
             };
