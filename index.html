@@ -193,14 +193,15 @@
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
+            return audioCtx;
         }
 
         async function loadAudio(file) {
-            initAudio();
+            const ctx = initAudio();
             const arrayBuffer = await file.arrayBuffer();
             console.log('Tiedosto luettu ArrayBufferiksi, pituus:', arrayBuffer.byteLength);
             try {
-                return await audioCtx.decodeAudioData(arrayBuffer);
+                return await ctx.decodeAudioData(arrayBuffer);
             } catch (e) {
                 console.error('AudioContext.decodeAudioData virhe:', e);
                 throw new Error('Tiedostomuotoa ei tueta tai tiedosto on vioittunut.');
@@ -223,8 +224,18 @@
                     resR.blob()
                 ]);
 
-                bufferL = await loadAudio(blobL);
-                bufferR = await loadAudio(blobR);
+                // iPhonella decodeAudioData saattaa vaatia AudioContextin olevan jo olemassa
+                // mutta emme voi kutsua initAudio() tässä ilman eleitä.
+                // Käytetään väliaikaista tapaa säilöä blobit, jos decode epäonnistuu.
+                const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const [bL, bR] = await Promise.all([
+                    tempCtx.decodeAudioData(await blobL.arrayBuffer()),
+                    tempCtx.decodeAudioData(await blobR.arrayBuffer())
+                ]);
+                bufferL = bL;
+                bufferR = bR;
+                tempCtx.close();
+                
                 checkReady();
             } catch (err) {
                 console.error('Virhe oletustiedostojen latauksessa:', err);
@@ -298,45 +309,48 @@
             return reversedBuffer;
         }
 
-        playBtn.addEventListener('click', () => {
-            initAudio();
+        playBtn.addEventListener('click', async () => {
+            const ctx = initAudio();
+            if (ctx.state === 'suspended') {
+                await ctx.resume();
+            }
+            
             if (isPlaying) stop();
             
             isPlaying = true;
             playBtn.disabled = true;
             stopBtn.disabled = false;
 
-            const merger = audioCtx.createChannelMerger(2);
+            const merger = ctx.createChannelMerger(2);
             
             // Reititys: merger -> (mahdollinen limitteri) -> destination
             if (useLimiter.checked) {
-                const limiter = audioCtx.createDynamicsCompressor();
-                // Limitteri-asetukset:
-                limiter.threshold.setValueAtTime(-12, audioCtx.currentTime); // Milloin kompressio alkaa
-                limiter.knee.setValueAtTime(30, audioCtx.currentTime);      // Pehmeä käyrä
-                limiter.ratio.setValueAtTime(12, audioCtx.currentTime);     // Kuinka voimakkaasti puristetaan
-                limiter.attack.setValueAtTime(0.003, audioCtx.currentTime); // Kuinka nopeasti reagoi
-                limiter.release.setValueAtTime(0.25, audioCtx.currentTime); // Kuinka nopeasti palautuu
+                const limiter = ctx.createDynamicsCompressor();
+                limiter.threshold.setValueAtTime(-12, ctx.currentTime);
+                limiter.knee.setValueAtTime(30, ctx.currentTime);
+                limiter.ratio.setValueAtTime(12, ctx.currentTime);
+                limiter.attack.setValueAtTime(0.003, ctx.currentTime);
+                limiter.release.setValueAtTime(0.25, ctx.currentTime);
                 
                 merger.connect(limiter);
-                limiter.connect(audioCtx.destination);
+                limiter.connect(ctx.destination);
             } else {
-                merger.connect(audioCtx.destination);
+                merger.connect(ctx.destination);
             }
 
-            gainL = audioCtx.createGain();
-            gainR = audioCtx.createGain();
+            gainL = ctx.createGain();
+            gainR = ctx.createGain();
             
             updateGains();
 
             function setupChannel(buffer, speed, reverse, channelIndex, gainNode) {
-                const source = audioCtx.createBufferSource();
+                const source = ctx.createBufferSource();
                 source.buffer = reverse ? createReversedBuffer(buffer) : buffer;
                 source.playbackRate.value = speed;
                 source.loop = loopAudio.checked;
 
                 if (buffer.numberOfChannels > 1) {
-                    const mixDown = audioCtx.createGain();
+                    const mixDown = ctx.createGain();
                     mixDown.gain.value = 1 / buffer.numberOfChannels;
                     source.connect(mixDown);
                     mixDown.connect(gainNode);
