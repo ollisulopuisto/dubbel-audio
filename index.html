@@ -14,15 +14,15 @@
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center p-4 md:p-8">
-    <div class="max-w-4xl w-full">
+    <div class="max-w-6xl w-full">
         <header class="text-center mb-12">
             <h1 class="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">Dubbel Audio</h1>
             <p class="text-slate-400">Lataa kaksi tiedostoa: toinen vasemmalle, toinen oikealle.</p>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 items-start">
             <!-- Vasen kanava -->
-            <div>
+            <div class="order-1">
                 <div class="text-xs font-bold text-blue-400 mb-2 uppercase tracking-widest text-center">Koraani (Holy Quran)</div>
                 <div class="channel-card p-6 rounded-2xl">
                     <h2 class="text-xl font-semibold mb-4 flex items-center">
@@ -58,8 +58,59 @@
                 </div>
             </div>
 
+            <!-- KESKIKOLUMNI: Mikseri ja pääkontrollit -->
+            <div class="order-2 lg:order-2 flex flex-col gap-6">
+                <!-- Mikseri -->
+                <div class="w-full channel-card p-6 rounded-2xl">
+                    <div class="flex justify-between mb-2">
+                        <label class="text-sm font-medium text-slate-400 uppercase tracking-wider">Mikseri (L / R)</label>
+                        <span id="mixVal" class="text-green-400 font-mono text-sm">Keski</span>
+                    </div>
+                    <input type="range" id="mixer" min="-1" max="1" step="0.01" value="0" class="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-green-500">
+                    <div class="flex justify-between mt-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                        <span>Vasen</span>
+                        <span>Molemmat</span>
+                        <span>Oikea</span>
+                    </div>
+                </div>
+
+                <!-- Valinnat -->
+                <div class="flex flex-col gap-3 w-full">
+                    <div class="flex items-center gap-2 bg-slate-800/50 px-4 py-3 rounded-xl border border-slate-700 w-full">
+                        <input type="checkbox" id="useLimiter" class="w-4 h-4 text-green-500 bg-slate-700 border-slate-600 rounded focus:ring-green-500">
+                        <label for="useLimiter" class="text-xs font-semibold text-slate-300 uppercase tracking-wider cursor-pointer flex-1">Tasapainota (Limitteri)</label>
+                    </div>
+
+                    <div class="flex items-center gap-2 bg-slate-800/50 px-4 py-3 rounded-xl border border-slate-700 w-full">
+                        <input type="checkbox" id="loopAudio" class="w-4 h-4 text-blue-500 bg-slate-700 border-slate-600 rounded focus:ring-blue-500">
+                        <label for="loopAudio" class="text-xs font-semibold text-slate-300 uppercase tracking-wider cursor-pointer flex-1">Looppaa toisto</label>
+                    </div>
+                </div>
+
+                <div id="unlockOverlay" class="flex flex-col items-center gap-4">
+                    <button id="unlockBtn" class="w-full px-6 py-4 bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-black rounded-xl transition-all shadow-xl shadow-yellow-500/20 animate-bounce text-center leading-tight uppercase text-sm">
+                        Aktivoi äänet (iOS)
+                    </button>
+                    <p class="text-[9px] text-slate-500 uppercase font-bold tracking-tighter text-center px-4">
+                        iPhone vaatii klikkauksen äänen aktivoimiseksi.
+                    </p>
+                </div>
+
+                <div id="controls" class="hidden flex flex-col gap-4">
+                    <button id="playBtn" disabled class="w-full py-4 bg-green-500 hover:bg-green-600 disabled:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black rounded-xl transition-all flex justify-center items-center gap-2 uppercase tracking-widest">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                        SOITA
+                    </button>
+                    <button id="stopBtn" disabled class="w-full py-4 bg-red-500 hover:bg-red-600 disabled:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black rounded-xl transition-all flex justify-center items-center gap-2 uppercase tracking-widest">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
+                        PYSÄYTÄ
+                    </button>
+                </div>
+                <p id="status" class="text-sm text-slate-500 italic text-center">Ladataan oletustiedostoja...</p>
+            </div>
+
             <!-- Oikea kanava -->
-            <div>
+            <div class="order-3">
                 <div class="text-xs font-bold text-purple-400 mb-2 uppercase tracking-widest text-center">Das Kapital (English)</div>
                 <div class="channel-card p-6 rounded-2xl">
                     <h2 class="text-xl font-semibold mb-4 flex items-center">
@@ -94,56 +145,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="flex flex-col items-center gap-6">
-            <!-- Mikseri -->
-            <div class="w-full max-w-md channel-card p-6 rounded-2xl">
-                <div class="flex justify-between mb-2">
-                    <label class="text-sm font-medium text-slate-400 uppercase tracking-wider">Mikseri (L / R balance)</label>
-                    <span id="mixVal" class="text-green-400 font-mono text-sm">Keski</span>
-                </div>
-                <input type="range" id="mixer" min="-1" max="1" step="0.01" value="0" class="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-green-500">
-                <div class="flex justify-between mt-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                    <span>Vasen</span>
-                    <span>Molemmat</span>
-                    <span>Oikea</span>
-                </div>
-            </div>
-
-            <!-- Valinnat -->
-            <div class="flex flex-wrap justify-center gap-4">
-                <div class="flex items-center gap-2 bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700">
-                    <input type="checkbox" id="useLimiter" class="w-4 h-4 text-green-500 bg-slate-700 border-slate-600 rounded focus:ring-green-500">
-                    <label for="useLimiter" class="text-xs font-semibold text-slate-300 uppercase tracking-wider cursor-pointer">Tasapainota (Limitteri)</label>
-                </div>
-
-                <div class="flex items-center gap-2 bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700">
-                    <input type="checkbox" id="loopAudio" class="w-4 h-4 text-blue-500 bg-slate-700 border-slate-600 rounded focus:ring-blue-500">
-                    <label for="loopAudio" class="text-xs font-semibold text-slate-300 uppercase tracking-wider cursor-pointer">Looppaa toisto</label>
-                </div>
-            </div>
-
-            <div id="unlockOverlay" class="flex flex-col items-center gap-4">
-                <button id="unlockBtn" class="px-10 py-4 bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-black rounded-full transition-all shadow-xl shadow-yellow-500/20 animate-bounce text-center leading-tight">
-                    KLIKKAA TÄSTÄ AKTIVOIDAKSESI ÄÄNET (iOS)
-                </button>
-                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-tighter text-center max-w-[250px]">
-                    iPhone vaatii manuaalisen klikkauksen äänen aktivoimiseksi. Tarkista myös, ettei puhelin ole fyysisellä kytkimellä äänettömällä.
-                </p>
-            </div>
-
-            <div id="controls" class="hidden flex gap-4">
-                <button id="playBtn" disabled class="px-8 py-3 bg-green-500 hover:bg-green-600 disabled:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-full transition-all flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
-                    SOITA
-                </button>
-                <button id="stopBtn" disabled class="px-8 py-3 bg-red-500 hover:bg-red-600 disabled:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-full transition-all flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
-                    PYSÄYTÄ
-                </button>
-            </div>
-            <p id="status" class="text-sm text-slate-500 italic text-center">Ladataan oletustiedostoja...</p>
         </div>
     </div>
 
@@ -209,7 +210,6 @@
         unlockBtn.addEventListener('click', () => {
             const ctx = initAudio();
             
-            // Soitetaan hetki hiljaisuutta herättämiseksi
             const osc = ctx.createOscillator();
             const silent = ctx.createGain();
             silent.gain.value = 0;
