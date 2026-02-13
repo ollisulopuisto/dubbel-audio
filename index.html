@@ -90,7 +90,21 @@
             </div>
         </div>
 
-        <div class="flex flex-col items-center gap-4">
+        <div class="flex flex-col items-center gap-6">
+            <!-- Mikseri -->
+            <div class="w-full max-w-md channel-card p-6 rounded-2xl">
+                <div class="flex justify-between mb-2">
+                    <label class="text-sm font-medium text-slate-400 uppercase tracking-wider">Mikseri (L / R balance)</label>
+                    <span id="mixVal" class="text-green-400 font-mono text-sm">Keski</span>
+                </div>
+                <input type="range" id="mixer" min="-1" max="1" step="0.01" value="0" class="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-green-500">
+                <div class="flex justify-between mt-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                    <span>Vasen</span>
+                    <span>Molemmat</span>
+                    <span>Oikea</span>
+                </div>
+            </div>
+
             <div class="flex gap-4">
                 <button id="playBtn" disabled class="px-8 py-3 bg-green-500 hover:bg-green-600 disabled:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-full transition-all flex items-center gap-2">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
@@ -109,12 +123,15 @@
         let audioCtx;
         let bufferL, bufferR;
         let sourceL, sourceR;
+        let gainL, gainR;
         let isPlaying = false;
 
         const fileL = document.getElementById('fileL');
         const fileR = document.getElementById('fileR');
         const speedL = document.getElementById('speedL');
         const speedR = document.getElementById('speedR');
+        const mixer = document.getElementById('mixer');
+        const mixVal = document.getElementById('mixVal');
         const speedValL = document.getElementById('speedValL');
         const speedValR = document.getElementById('speedValR');
         const reverseL = document.getElementById('reverseL');
@@ -122,6 +139,24 @@
         const playBtn = document.getElementById('playBtn');
         const stopBtn = document.getElementById('stopBtn');
         const status = document.getElementById('status');
+
+        function updateGains() {
+            if (!gainL || !gainR) return;
+            const val = parseFloat(mixer.value);
+            // -1: vain vasen, 0: molemmat täysillä, 1: vain oikea
+            // Käytetään yksinkertaista lineaarista häivytystä
+            const volL = val > 0 ? 1 - val : 1;
+            const volR = val < 0 ? 1 + val : 1;
+            
+            gainL.gain.setTargetAtTime(volL, audioCtx.currentTime, 0.05);
+            gainR.gain.setTargetAtTime(volR, audioCtx.currentTime, 0.05);
+
+            if (val === 0) mixVal.textContent = 'Keski';
+            else if (val < 0) mixVal.textContent = 'Vasen ' + Math.round(Math.abs(val)*100) + '%';
+            else mixVal.textContent = 'Oikea ' + Math.round(val*100) + '%';
+        }
+
+        mixer.addEventListener('input', updateGains);
 
         // Alustetaan AudioContext käyttäjän eleestä (vältetään lukitus mobiilissa)
         function initAudio() {
@@ -212,7 +247,12 @@
             const merger = audioCtx.createChannelMerger(2);
             merger.connect(audioCtx.destination);
 
-            function setupChannel(buffer, speed, reverse, channelIndex) {
+            gainL = audioCtx.createGain();
+            gainR = audioCtx.createGain();
+            
+            updateGains();
+
+            function setupChannel(buffer, speed, reverse, channelIndex, gainNode) {
                 const source = audioCtx.createBufferSource();
                 source.buffer = reverse ? createReversedBuffer(buffer) : buffer;
                 source.playbackRate.value = speed;
@@ -221,15 +261,17 @@
                     const mixDown = audioCtx.createGain();
                     mixDown.gain.value = 1 / buffer.numberOfChannels;
                     source.connect(mixDown);
-                    mixDown.connect(merger, 0, channelIndex);
+                    mixDown.connect(gainNode);
                 } else {
-                    source.connect(merger, 0, channelIndex);
+                    source.connect(gainNode);
                 }
+                
+                gainNode.connect(merger, 0, channelIndex);
                 return source;
             }
 
-            sourceL = setupChannel(bufferL, speedL.value, reverseL.checked, 0);
-            sourceR = setupChannel(bufferR, speedR.value, reverseR.checked, 1);
+            sourceL = setupChannel(bufferL, speedL.value, reverseL.checked, 0, gainL);
+            sourceR = setupChannel(bufferR, speedR.value, reverseR.checked, 1, gainR);
 
             sourceL.start();
             sourceR.start();
