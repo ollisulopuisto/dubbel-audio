@@ -123,25 +123,45 @@
         const stopBtn = document.getElementById('stopBtn');
         const status = document.getElementById('status');
 
+        // Alustetaan AudioContext käyttäjän eleestä (vältetään lukitus mobiilissa)
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
         async function loadAudio(file) {
+            initAudio();
             const arrayBuffer = await file.arrayBuffer();
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             return await audioCtx.decodeAudioData(arrayBuffer);
         }
 
         fileL.addEventListener('change', async (e) => {
             if (e.target.files[0]) {
                 status.textContent = 'Ladataan vasenta kanavaa...';
-                bufferL = await loadAudio(e.target.files[0]);
-                checkReady();
+                try {
+                    bufferL = await loadAudio(e.target.files[0]);
+                    checkReady();
+                } catch (err) {
+                    status.textContent = 'Virhe tiedoston latauksessa';
+                    console.error(err);
+                }
             }
         });
 
         fileR.addEventListener('change', async (e) => {
             if (e.target.files[0]) {
                 status.textContent = 'Ladataan oikeaa kanavaa...';
-                bufferR = await loadAudio(e.target.files[0]);
-                checkReady();
+                try {
+                    bufferR = await loadAudio(e.target.files[0]);
+                    checkReady();
+                } catch (err) {
+                    status.textContent = 'Virhe tiedoston latauksessa';
+                    console.error(err);
+                }
             }
         });
 
@@ -156,12 +176,12 @@
 
         speedL.addEventListener('input', (e) => {
             speedValL.textContent = e.target.value + 'x';
-            if (sourceL) sourceL.playbackRate.value = e.target.value;
+            if (sourceL) sourceL.playbackRate.setTargetAtTime(e.target.value, audioCtx.currentTime, 0.1);
         });
 
         speedR.addEventListener('input', (e) => {
             speedValR.textContent = e.target.value + 'x';
-            if (sourceR) sourceR.playbackRate.value = e.target.value;
+            if (sourceR) sourceR.playbackRate.setTargetAtTime(e.target.value, audioCtx.currentTime, 0.1);
         });
 
         function createReversedBuffer(originalBuffer) {
@@ -182,24 +202,21 @@
         }
 
         playBtn.addEventListener('click', () => {
+            initAudio();
             if (isPlaying) stop();
             
-            audioCtx.resume();
             isPlaying = true;
             playBtn.disabled = true;
             stopBtn.disabled = false;
 
-            // Luo yhdistäjä (merger), joka ottaa kaksi mono-sisääntuloa ja tekee niistä stereon
             const merger = audioCtx.createChannelMerger(2);
             merger.connect(audioCtx.destination);
 
-            // Funktio mono-miksaukseen ja reititykseen
             function setupChannel(buffer, speed, reverse, channelIndex) {
                 const source = audioCtx.createBufferSource();
                 source.buffer = reverse ? createReversedBuffer(buffer) : buffer;
                 source.playbackRate.value = speed;
 
-                // Jos tiedosto on stereo, sekoitetaan se monoksi ennen yhdistämistä
                 if (buffer.numberOfChannels > 1) {
                     const mixDown = audioCtx.createGain();
                     mixDown.gain.value = 1 / buffer.numberOfChannels;
@@ -219,7 +236,6 @@
 
             status.textContent = 'Toistetaan...';
 
-            // Pysäytetään kun molemmat ovat loppuneet (tai jos stop painetaan)
             let endedCount = 0;
             const onEnded = () => {
                 endedCount++;
