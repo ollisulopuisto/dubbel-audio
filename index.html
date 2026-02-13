@@ -22,69 +22,75 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             <!-- Vasen kanava -->
-            <div class="channel-card p-6 rounded-2xl">
-                <h2 class="text-xl font-semibold mb-4 flex items-center">
-                    <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
-                    Vasen kanava (L)
-                </h2>
-                
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-slate-400 mb-2">Valitse tiedosto</label>
-                    <input type="file" id="fileL" accept="audio/*, .mp3, .m4a, .wav, .aac" class="block w-full text-sm text-slate-400
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-full file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-blue-500 file:text-white
-                        hover:file:bg-blue-600
-                        cursor-pointer">
-                </div>
-
-                <div class="space-y-6">
-                    <div>
-                        <div class="flex justify-between mb-2">
-                            <label class="text-sm font-medium text-slate-400">Nopeus</label>
-                            <span id="speedValL" class="text-blue-400 font-mono text-sm">0.5x</span>
-                        </div>
-                        <input type="range" id="speedL" min="0.1" max="4" step="0.1" value="0.5" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+            <div>
+                <div class="text-xs font-bold text-blue-400 mb-2 uppercase tracking-widest text-center">Koraani (Holy Quran)</div>
+                <div class="channel-card p-6 rounded-2xl">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center">
+                        <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                        Vasen kanava (L)
+                    </h2>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-slate-400 mb-2">Vaihda tiedostoa</label>
+                        <input type="file" id="fileL" accept="audio/*, .mp3, .m4a, .wav, .aac" class="block w-full text-sm text-slate-400
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-full file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-blue-500 file:text-white
+                            hover:file:bg-blue-600
+                            cursor-pointer">
                     </div>
 
-                    <div class="flex items-center">
-                        <input type="checkbox" id="reverseL" class="w-4 h-4 text-blue-500 bg-slate-700 border-slate-600 rounded focus:ring-blue-500">
-                        <label for="reverseL" class="ml-2 text-sm font-medium text-slate-300">Soita takaperin</label>
+                    <div class="space-y-6">
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <label class="text-sm font-medium text-slate-400">Nopeus</label>
+                                <span id="speedValL" class="text-blue-400 font-mono text-sm">0.5x</span>
+                            </div>
+                            <input type="range" id="speedL" min="0.1" max="4" step="0.1" value="0.5" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                        </div>
+
+                        <div class="flex items-center">
+                            <input type="checkbox" id="reverseL" class="w-4 h-4 text-blue-500 bg-slate-700 border-slate-600 rounded focus:ring-blue-500">
+                            <label for="reverseL" class="ml-2 text-sm font-medium text-slate-300">Soita takaperin</label>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Oikea kanava -->
-            <div class="channel-card p-6 rounded-2xl">
-                <h2 class="text-xl font-semibold mb-4 flex items-center">
-                    <span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
-                    Oikea kanava (R)
-                </h2>
-                
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-slate-400 mb-2">Valitse tiedosto</label>
-                    <input type="file" id="fileR" accept="audio/*, .mp3, .m4a, .wav, .aac" class="block w-full text-sm text-slate-400
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-full file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-purple-500 file:text-white
-                        hover:file:bg-purple-600
-                        cursor-pointer">
-                </div>
-
-                <div class="space-y-6">
-                    <div>
-                        <div class="flex justify-between mb-2">
-                            <label class="text-sm font-medium text-slate-400">Nopeus</label>
-                            <span id="speedValR" class="text-purple-400 font-mono text-sm">1.5x</span>
-                        </div>
-                        <input type="range" id="speedR" min="0.1" max="4" step="0.1" value="1.5" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
+            <div>
+                <div class="text-xs font-bold text-purple-400 mb-2 uppercase tracking-widest text-center">Das Kapital (English)</div>
+                <div class="channel-card p-6 rounded-2xl">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center">
+                        <span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
+                        Oikea kanava (R)
+                    </h2>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-slate-400 mb-2">Vaihda tiedostoa</label>
+                        <input type="file" id="fileR" accept="audio/*, .mp3, .m4a, .wav, .aac" class="block w-full text-sm text-slate-400
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-full file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-purple-500 file:text-white
+                            hover:file:bg-purple-600
+                            cursor-pointer">
                     </div>
 
-                    <div class="flex items-center">
-                        <input type="checkbox" id="reverseR" class="w-4 h-4 text-purple-500 bg-slate-700 border-slate-600 rounded focus:ring-purple-500">
-                        <label for="reverseR" class="ml-2 text-sm font-medium text-slate-300">Soita takaperin</label>
+                    <div class="space-y-6">
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <label class="text-sm font-medium text-slate-400">Nopeus</label>
+                                <span id="speedValR" class="text-purple-400 font-mono text-sm">1.5x</span>
+                            </div>
+                            <input type="range" id="speedR" min="0.1" max="4" step="0.1" value="1.5" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                        </div>
+
+                        <div class="flex items-center">
+                            <input type="checkbox" id="reverseR" class="w-4 h-4 text-purple-500 bg-slate-700 border-slate-600 rounded focus:ring-purple-500">
+                            <label for="reverseR" class="ml-2 text-sm font-medium text-slate-300">Soita takaperin</label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -200,6 +206,33 @@
                 throw new Error('Tiedostomuotoa ei tueta tai tiedosto on vioittunut.');
             }
         }
+
+        // Lataa oletustiedostot
+        async function loadDefaults() {
+            status.textContent = 'Ladataan oletustiedostoja...';
+            try {
+                const [resL, resR] = await Promise.all([
+                    fetch('001.mp3'),
+                    fetch('002.mp3')
+                ]);
+                
+                if (!resL.ok || !resR.ok) throw new Error('Oletustiedostoja ei löytynyt.');
+
+                const [blobL, blobR] = await Promise.all([
+                    resL.blob(),
+                    resR.blob()
+                ]);
+
+                bufferL = await loadAudio(blobL);
+                bufferR = await loadAudio(blobR);
+                checkReady();
+            } catch (err) {
+                console.error('Virhe oletustiedostojen latauksessa:', err);
+                status.textContent = 'Oletustiedostojen lataus epäonnistui. Lataa omat tiedostosi.';
+            }
+        }
+
+        window.addEventListener('load', loadDefaults);
 
         fileL.addEventListener('change', async (e) => {
             if (e.target.files[0]) {
