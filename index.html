@@ -30,7 +30,7 @@
                 
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-slate-400 mb-2">Valitse tiedosto</label>
-                    <input type="file" id="fileL" accept="audio/*" class="block w-full text-sm text-slate-400
+                    <input type="file" id="fileL" accept="audio/*, .mp3, .m4a, .wav, .aac" class="block w-full text-sm text-slate-400
                         file:mr-4 file:py-2 file:px-4
                         file:rounded-full file:border-0
                         file:text-sm file:font-semibold
@@ -64,7 +64,7 @@
                 
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-slate-400 mb-2">Valitse tiedosto</label>
-                    <input type="file" id="fileR" accept="audio/*" class="block w-full text-sm text-slate-400
+                    <input type="file" id="fileR" accept="audio/*, .mp3, .m4a, .wav, .aac" class="block w-full text-sm text-slate-400
                         file:mr-4 file:py-2 file:px-4
                         file:rounded-full file:border-0
                         file:text-sm file:font-semibold
@@ -178,17 +178,24 @@
         async function loadAudio(file) {
             initAudio();
             const arrayBuffer = await file.arrayBuffer();
-            return await audioCtx.decodeAudioData(arrayBuffer);
+            console.log('Tiedosto luettu ArrayBufferiksi, pituus:', arrayBuffer.byteLength);
+            try {
+                return await audioCtx.decodeAudioData(arrayBuffer);
+            } catch (e) {
+                console.error('AudioContext.decodeAudioData virhe:', e);
+                throw new Error('Tiedostomuotoa ei tueta tai tiedosto on vioittunut.');
+            }
         }
 
         fileL.addEventListener('change', async (e) => {
             if (e.target.files[0]) {
-                status.textContent = 'Ladataan vasenta kanavaa...';
+                const name = e.target.files[0].name;
+                status.textContent = 'Ladataan: ' + name + '...';
                 try {
                     bufferL = await loadAudio(e.target.files[0]);
                     checkReady();
                 } catch (err) {
-                    status.textContent = 'Virhe tiedoston latauksessa';
+                    status.textContent = 'VIRHE (Vasen): ' + err.message;
                     console.error(err);
                 }
             }
@@ -196,12 +203,13 @@
 
         fileR.addEventListener('change', async (e) => {
             if (e.target.files[0]) {
-                status.textContent = 'Ladataan oikeaa kanavaa...';
+                const name = e.target.files[0].name;
+                status.textContent = 'Ladataan: ' + name + '...';
                 try {
                     bufferR = await loadAudio(e.target.files[0]);
                     checkReady();
                 } catch (err) {
-                    status.textContent = 'Virhe tiedoston latauksessa';
+                    status.textContent = 'VIRHE (Oikea): ' + err.message;
                     console.error(err);
                 }
             }
