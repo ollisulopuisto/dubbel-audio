@@ -165,6 +165,12 @@
 
         mixer.addEventListener('input', updateGains);
 
+        // Nollaa mikseri keskelle tuplaklikkauksella
+        mixer.addEventListener('dblclick', () => {
+            mixer.value = 0;
+            updateGains();
+        });
+
         // Alustetaan AudioContext käyttäjän eleestä (vältetään lukitus mobiilissa)
         function initAudio() {
             if (!audioCtx) {
