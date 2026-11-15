@@ -155,6 +155,12 @@
         let gainL, gainR;
         let isPlaying = false;
 
+        // Reversed-buffer cache keyed by source buffer object identity.
+        // Reversing is an O(n) JS loop over every sample; computing it once per
+        // buffer and reusing on repeat plays avoids re-paying that cost on the
+        // main thread each time playback starts with "takaperin" enabled.
+        const reversedCache = new Map();
+
         const fileL = document.getElementById('fileL');
         const fileR = document.getElementById('fileR');
         const speedL = document.getElementById('speedL');
@@ -258,6 +264,7 @@
                 bufferL = bL;
                 bufferR = bR;
                 tempCtx.close();
+                reversedCache.clear();
                 
                 checkReady();
             } catch (err) {
@@ -274,6 +281,7 @@
                 status.textContent = 'Ladataan: ' + name + '...';
                 try {
                     bufferL = await loadAudio(e.target.files[0]);
+                    reversedCache.clear();
                     checkReady();
                 } catch (err) {
                     status.textContent = 'VIRHE (Vasen): ' + err.message;
@@ -287,6 +295,7 @@
                 status.textContent = 'Ladataan: ' + name + '...';
                 try {
                     bufferR = await loadAudio(e.target.files[0]);
+                    reversedCache.clear();
                     checkReady();
                 } catch (err) {
                     status.textContent = 'VIRHE (Oikea): ' + err.message;
@@ -316,7 +325,9 @@
         });
 
         function createReversedBuffer(originalBuffer) {
-            const ctx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+            // Reuse the live AudioContext instead of throwing away a temp one per call.
+            if (!audioCtx) throw new Error('AudioContext not initialised.');
+            const ctx = audioCtx;
             const reversedBuffer = ctx.createBuffer(
                 originalBuffer.numberOfChannels,
                 originalBuffer.length,
@@ -331,6 +342,15 @@
                 }
             }
             return reversedBuffer;
+        }
+
+        function getReversedBuffer(buffer) {
+            let cached = reversedCache.get(buffer);
+            if (!cached) {
+                cached = createReversedBuffer(buffer);
+                reversedCache.set(buffer, cached);
+            }
+            return cached;
         }
 
         playBtn.addEventListener('click', async () => {
@@ -368,7 +388,9 @@
 
             function setupChannel(buffer, speed, reverse, channelIndex, gainNode) {
                 const source = ctx.createBufferSource();
-                source.buffer = reverse ? createReversedBuffer(buffer) : buffer;
+                // Cache the reversed buffer: repeat plays with reverse enabled reuse
+                // the already-computed buffer instead of re-running the O(n) loop.
+                source.buffer = reverse ? getReversedBuffer(buffer) : buffer;
                 source.playbackRate.value = speed;
                 source.loop = loopAudio.checked;
 
